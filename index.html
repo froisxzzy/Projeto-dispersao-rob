@@ -1,1 +1,697 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Uma viagem interativa e elaborada sobre Dispersão, Difração e suas aplicações práticas, como o aquecimento solar.">
+<title>LUZ EM AÇÃO · Dispersão, Difração e Energia</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='80'>🌈</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Space+Grotesk:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* ================= BASE / IDENTIDADE ================= */
+:root{
+  --bg:#04070f; --bg2:#0a1226; --panel:#0b142b; --ink:#eaf2ff; --dim:#93a4c3;
+  --line:rgba(147,164,195,.28); --white:#ffffff;
+  --c1:#ff4d3d; --c2:#ff9f1c; --c3:#ffe14d; --c4:#3ddc84; --c5:#38a3ff; --c6:#b06bff;
+  --f-disp:'Orbitron',sans-serif; --f-body:'Space Grotesk',sans-serif; --f-mono:'Space Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:1.05rem;line-height:1.6;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0;z-index:-2;
+  background:radial-gradient(1100px 600px at 75% -10%,rgba(56,163,255,.12),transparent 60%),
+             radial-gradient(900px 500px at 10% 110%,rgba(176,107,255,.10),transparent 60%),var(--bg);}
+body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.4;
+  background-image:linear-gradient(rgba(147,164,195,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(147,164,195,.06) 1px,transparent 1px);
+  background-size:56px 56px;}
+::selection{background:var(--c6);color:#0a0518}
+:focus-visible{outline:3px solid var(--c5);outline-offset:3px;border-radius:6px}
+img,svg,canvas{max-width:100%;display:block}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+.mono{font-family:var(--f-mono)}
+#photons{position:fixed;inset:0;z-index:-1;pointer-events:none}
+.noise{position:fixed;inset:0;z-index:60;pointer-events:none;opacity:.04;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.skip{position:absolute;left:-999px;top:0;z-index:200;background:var(--c5);color:#04101f;padding:.7rem 1.1rem;font-family:var(--f-mono)}
+.skip:focus{left:12px;top:12px}
 
+/* ================= CABEÇALHO + PROGRESSO ================= */
+header{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;gap:1.2rem;
+  padding:.7rem 4%;background:rgba(4,7,15,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.brand{font-family:var(--f-disp);font-weight:900;font-size:.95rem;letter-spacing:.14em;white-space:nowrap}
+.brand b{color:var(--c5)}
+.steps{display:flex;align-items:center;gap:0;margin-inline:auto;list-style:none}
+.steps li{display:flex;align-items:center}
+.steps button{display:flex;flex-direction:column;align-items:center;gap:.25rem;padding:.2rem .5rem;border-radius:8px}
+.steps .dot{width:12px;height:12px;border-radius:50%;border:2px solid var(--sc,var(--dim));transition:all .3s}
+.steps button:hover .dot{transform:scale(1.3)}
+.steps li:nth-child(1) .dot{--sc:var(--c1)}.steps li:nth-child(2) .dot{--sc:var(--c2)}
+.steps li:nth-child(3) .dot{--sc:var(--c3)}.steps li:nth-child(4) .dot{--sc:var(--c4)}
+.steps li:nth-child(5) .dot{--sc:var(--c5)}.steps li:nth-child(6) .dot{--sc:var(--c6)}
+.steps .num{font-family:var(--f-mono);font-size:.6rem;color:var(--dim)}
+.steps li.done .dot{background:var(--sc);box-shadow:0 0 10px var(--sc)}
+.steps li.now .dot{background:var(--sc);box-shadow:0 0 14px var(--sc);transform:scale(1.4)}
+.steps li.now .num{color:var(--ink);font-weight:700}
+.steps .bar{width:clamp(10px,3vw,44px);height:2px;background:var(--line)}
+.steps li.done .bar{background:var(--sc)}
+.steps .flag{font-size:1.1rem;filter:grayscale(1);transition:filter .4s}
+.steps .flag.lit{filter:none;text-shadow:0 0 14px var(--c3);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+@media(max-width:760px){.steps .num{display:none}.brand span{display:none}}
+
+/* ================= PALCO / ESTÁGIOS ================= */
+main{padding-top:84px;min-height:100vh}
+.stage{display:none;max-width:1060px;margin:0 auto;padding:3rem 5% 5rem;position:relative}
+.stage.active{display:block;animation:stageIn .7s cubic-bezier(.2,.8,.2,1)}
+@keyframes stageIn{from{opacity:0;transform:translateY(32px) scale(.98)}to{opacity:1;transform:none}}
+.stage.active::before{content:"";position:absolute;top:0;left:-10%;width:120%;height:2px;
+  background:linear-gradient(90deg,transparent,var(--c5),var(--c6),transparent);
+  animation:sweep 1.2s ease-out 1;opacity:.9}
+@keyframes sweep{from{transform:translateX(-60%)}to{transform:translateX(60%)}}
+.kicker{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.28em;color:var(--kc,var(--c5));text-transform:uppercase;margin-bottom:.5rem}
+.stage h2{font-family:var(--f-disp);font-weight:900;font-size:clamp(1.6rem,4.5vw,2.8rem);letter-spacing:.04em;margin:.6rem 0 .6rem;line-height:1.2}
+.stage .sub{color:var(--dim);max-width:56ch;font-size:1.1rem}
+.stage h2:focus{outline:none}
+.stage-nav{display:flex;justify-content:space-between;gap:1rem;margin-top:3.5rem;flex-wrap:wrap}
+.btn{font-family:var(--f-disp);font-weight:700;font-size:.85rem;letter-spacing:.12em;padding:1rem 1.7rem;
+  border:1px solid var(--c5);border-radius:10px;color:var(--ink);background:rgba(56,163,255,.08);
+  transition:all .25s;text-transform:uppercase;position:relative;overflow:hidden}
+.btn::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.1),transparent);transform:translateX(-100%);transition:transform .5s}
+.btn:hover::after{transform:translateX(100%)}
+.btn:hover{background:rgba(56,163,255,.2);box-shadow:0 0 24px rgba(56,163,255,.35);transform:translateY(-2px)}
+.btn.primary{border-color:var(--c3);background:rgba(255,225,77,.1)}
+.btn.primary:hover{background:rgba(255,225,77,.22);box-shadow:0 0 28px rgba(255,225,77,.35)}
+.btn.big{font-size:1.1rem;padding:1.2rem 2.8rem}
+.btn:disabled{opacity:.35;cursor:not-allowed;transform:none;box-shadow:none}
+.fb{margin-top:1.2rem;padding:1.1rem 1.3rem;border:1px solid var(--line);border-left:4px solid var(--c5);
+  border-radius:8px;background:var(--panel);font-size:.98rem;min-height:1em;transition:all .3s}
+.fb.ok{border-left-color:var(--c4);background:rgba(61,220,132,.08)}
+.fb.err{border-left-color:var(--c1);background:rgba(255,77,61,.08);animation:shake .4s}
+@keyframes shake{25%{transform:translateX(-6px)}50%{transform:translateX(6px)}75%{transform:translateX(-3px)}}
+.lab{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:1.6rem;margin-top:1.8rem;position:relative;box-shadow:0 10px 40px rgba(0,0,0,.3)}
+.lab .hint{position:absolute;top:.8rem;right:1.2rem;font-family:var(--f-mono);font-size:.62rem;letter-spacing:.18em;color:var(--dim);background:var(--bg2);padding:.3rem .6rem;border-radius:4px}
+input[type=range]{appearance:none;width:100%;height:10px;border-radius:99px;border:1px solid var(--line);
+  background:linear-gradient(90deg,#b06bff,#38a3ff,#3ddc84,#ffe14d,#ff9f1c,#ff4d3d);cursor:pointer;margin:.8rem 0}
+input[type=range]::-webkit-slider-thumb{appearance:none;width:26px;height:26px;border-radius:50%;background:#fff;border:3px solid #04101f;box-shadow:0 0 12px #fff}
+input[type=range]::-moz-range-thumb{width:24px;height:24px;border-radius:50%;background:#fff;border:3px solid #04101f;box-shadow:0 0 12px #fff}
+input[type=range].plain{background:var(--bg2)}
+.chips{display:flex;gap:.5rem;flex-wrap:wrap;margin:1rem 0}
+.chips button{width:44px;height:44px;border-radius:50%;border:2px solid rgba(255,255,255,.25);transition:transform .2s,box-shadow .2s}
+.chips button:hover{transform:scale(1.15)}
+.chips button[aria-pressed="true"]{transform:scale(1.25);box-shadow:0 0 18px currentColor;border-color:#fff}
+.qbox{margin-top:1.6rem;padding:1.2rem;border:1px dashed var(--line);border-radius:12px;background:rgba(11,20,43,.5)}
+.qbox p{font-weight:700;margin-bottom:.8rem;font-size:1.05rem}
+.qbox .row{display:flex;gap:.7rem;flex-wrap:wrap}
+
+/* ================= INTRO ================= */
+#st0{min-height:calc(100vh - 84px);display:none;place-items:center;text-align:center}
+#st0.active{display:grid}
+.intro-beam{position:absolute;top:38%;left:0;width:100%;height:3px;pointer-events:none;
+  background:linear-gradient(90deg,transparent,#fff 30%,#fff 70%,transparent);
+  filter:drop-shadow(0 0 14px #fff);transform:rotate(-6deg);animation:beamTravel 7s linear infinite}
+.intro-beam::after{content:"";position:absolute;right:6%;top:-1px;width:120px;height:5px;
+  background:linear-gradient(90deg,#ff4d3d,#ff9f1c,#ffe14d,#3ddc84,#38a3ff,#b06bff);filter:blur(1px) drop-shadow(0 0 8px #fff);opacity:.9}
+@keyframes beamTravel{from{transform:translateX(-70%) rotate(-6deg)}to{transform:translateX(70%) rotate(-6deg)}}
+#st0 h1{font-family:var(--f-disp);font-weight:900;font-size:clamp(1.8rem,5.8vw,3.8rem);letter-spacing:.06em;line-height:1.1;text-shadow:0 0 40px rgba(56,163,255,.4)}
+#st0 .sub{margin:1.4rem auto 2.4rem;color:var(--dim);font-size:1.2rem}
+#st0 .mini{margin-top:2.5rem;font-family:var(--f-mono);font-size:.7rem;letter-spacing:.2em;color:var(--dim);opacity:.7}
+
+/* ================= CENAS SVG ================= */
+.scene{width:100%;height:auto}
+.rayline{filter:drop-shadow(0 0 6px currentColor);transition:all .3s}
+.hitline{stroke:transparent;stroke-width:22;cursor:pointer}
+.draggable{cursor:grab;transition:filter .2s}
+.draggable:active{cursor:grabbing;filter:drop-shadow(0 0 20px rgba(120,190,255,.8))}
+
+/* ================= CD ================= */
+#cdArea{position:relative;height:420px;border-radius:16px;overflow:hidden;background:radial-gradient(600px 300px at 50% 60%,rgba(56,163,255,.08),transparent),var(--bg2);border:1px solid var(--line)}
+#cdDisc{position:absolute;left:50%;top:52%;width:250px;height:250px;transform:translate(-50%,-50%);border-radius:50%;cursor:pointer;
+  background:conic-gradient(from var(--sheen,0deg),#ff4d3d,#ff9f1c,#ffe14d,#3ddc84,#38a3ff,#b06bff,#ff4d3d);
+  box-shadow:0 0 40px rgba(255,255,255,.18),inset 0 0 60px rgba(0,0,0,.55);animation:cdspin 26s linear infinite}
+#cdDisc::before{content:"";position:absolute;inset:0;border-radius:50%;
+  background:repeating-radial-gradient(circle,transparent 0 3px,rgba(255,255,255,.14) 3px 4px)}
+#cdDisc::after{content:"";position:absolute;left:50%;top:50%;width:64px;height:64px;transform:translate(-50%,-50%);
+  border-radius:50%;background:var(--bg2);border:6px solid rgba(255,255,255,.35)}
+@keyframes cdspin{to{transform:translate(-50%,-50%) rotate(360deg)}}
+#cdLight{position:absolute;left:12%;top:18%;font-size:2.4rem;cursor:grab;filter:drop-shadow(0 0 16px #ffe14d);user-select:none;touch-action:none;z-index:2;transition:transform .1s}
+#cdLight:active{cursor:grabbing;transform:scale(1.1)}
+#cdRays{position:absolute;left:50%;top:52%;width:340px;height:8px;transform-origin:0 50%;pointer-events:none;
+  background:linear-gradient(90deg,transparent,#ff4d3d 20%,#ffe14d 40%,#3ddc84 60%,#38a3ff 80%,#b06bff);
+  filter:blur(1.5px) drop-shadow(0 0 10px #fff);opacity:.85}
+
+/* ================= QUIZ / CARDS / FINAL ================= */
+.quizcard{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:1.8rem;text-align:center;max-width:640px;margin:1.6rem auto 0;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+.quizcard .emo{font-size:3.2rem;display:block;margin-bottom:.8rem;filter:drop-shadow(0 0 14px rgba(255,255,255,.3))}
+.quizcard .score{font-family:var(--f-mono);font-size:.75rem;letter-spacing:.2em;color:var(--c3)}
+.ansrow{display:flex;gap:1rem;justify-content:center;margin-top:1.4rem;flex-wrap:wrap}
+.ansrow button{font-family:var(--f-disp);font-weight:700;letter-spacing:.1em;padding:.9rem 1.6rem;border-radius:10px;border:2px solid;transition:all .2s}
+.ansrow .b-disp{border-color:var(--c5);color:var(--c5)}
+.ansrow .b-difr{border-color:var(--c1);color:var(--c1)}
+.ansrow button:hover{transform:translateY(-3px);box-shadow:0 0 18px currentColor}
+
+.apps{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1.4rem;margin-top:1.8rem}
+.app-card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:1.6rem;text-align:left;transition:all .3s;position:relative;overflow:hidden}
+.app-card:hover{transform:translateY(-6px);box-shadow:0 12px 40px rgba(56,163,255,.15);border-color:var(--c5)}
+.app-card .emo{font-size:2.6rem;display:block;margin-bottom:.5rem}
+.app-card h3{font-family:var(--f-disp);font-size:1.05rem;margin:.5rem 0 .4rem;letter-spacing:.06em}
+.app-card p{font-size:.95rem;color:var(--dim)}
+.app-card .more{max-height:0;overflow:hidden;transition:max-height .5s ease, opacity .3s;opacity:0;color:var(--ink);font-size:.9rem;line-height:1.5}
+.app-card.open .more{max-height:250px;margin-top:.8rem;opacity:1}
+.app-card.open{border-color:var(--c4);background:rgba(61,220,132,.05)}
+.app-card .tag{position:absolute;top:1rem;right:1rem;font-family:var(--f-mono);font-size:.6rem;letter-spacing:.16em;color:var(--c5);background:rgba(56,163,255,.1);padding:.2rem .5rem;border-radius:4px}
+
+/* Card Especial da Piscina */
+.app-card.pool-card.open{border-color:var(--c2);background:rgba(255,159,28,.05)}
+.app-card.pool-card.open .tag{color:var(--c2);background:rgba(255,159,28,.1)}
+.heat-anim{display:flex;align-items:center;gap:.5rem;margin-top:.8rem;padding:.8rem;background:rgba(0,0,0,.2);border-radius:8px}
+.heat-ray{width:4px;height:20px;background:linear-gradient(to bottom, var(--c3), var(--c1));animation:heatPulse 1s infinite alternate}
+@keyframes heatPulse{from{opacity:.5;transform:scaleY(.8)}to{opacity:1;transform:scaleY(1.2)}}
+
+.seq-slots{display:flex;gap:.6rem;flex-wrap:wrap;margin:1rem 0 1.4rem}
+.slot{min-width:120px;padding:.9rem 1rem;border:2px dashed var(--line);border-radius:10px;font-family:var(--f-mono);font-size:.8rem;text-align:center;color:var(--dim);transition:all .3s}
+.slot.filled{border-style:solid;border-color:var(--c4);color:var(--ink);background:rgba(61,220,132,.1);box-shadow:0 0 14px rgba(61,220,132,.25)}
+.pool{display:flex;gap:.6rem;flex-wrap:wrap}
+.pool button{font-family:var(--f-mono);font-size:.8rem;padding:.8rem 1.1rem;border:1px solid var(--c5);border-radius:10px;background:rgba(56,163,255,.08);transition:all .2s}
+.pool button:hover{background:rgba(56,163,255,.2);transform:translateY(-2px)}
+.pool button.used{opacity:.25;pointer-events:none;transform:scale(.95)}
+.pool button.err{animation:shake .4s;border-color:var(--c1)}
+.arrow{align-self:center;color:var(--c3);font-weight:700;font-size:1.2rem}
+#finalWin{display:none;text-align:center;padding:2.5rem 1rem}
+#finalWin.show{display:block;animation:stageIn .8s}
+#finalWin h3{font-family:var(--f-disp);font-size:clamp(1.5rem,4.5vw,2.6rem);color:var(--c3);text-shadow:0 0 30px rgba(255,225,77,.5);margin-bottom:1rem}
+#finalWin p{max-width:600px;margin:0 auto;color:var(--dim);font-size:1.1rem}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  html{scroll-behavior:auto}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#app">Pular para o conteúdo</a>
+<canvas id="photons" aria-hidden="true"></canvas>
+<div class="noise" aria-hidden="true"></div>
+
+<header>
+  <p class="brand">🔬 LAB<b>·LUZ</b> <span style="color:var(--dim)">/ óptica interativa</span></p>
+  <ol class="steps" id="steps" aria-label="Progresso das experiências">
+    <li data-s="1"><button data-go="1"><span class="dot"></span><span class="num">1</span></button></li><li class="barli" aria-hidden="true"><span class="bar"></span></li>
+    <li data-s="2"><button data-go="2"><span class="dot"></span><span class="num">2</span></button></li><li aria-hidden="true"><span class="bar"></span></li>
+    <li data-s="3"><button data-go="3"><span class="dot"></span><span class="num">3</span></button></li><li aria-hidden="true"><span class="bar"></span></li>
+    <li data-s="4"><button data-go="4"><span class="dot"></span><span class="num">4</span></button></li><li aria-hidden="true"><span class="bar"></span></li>
+    <li data-s="5"><button data-go="5"><span class="dot"></span><span class="num">5</span></button></li><li aria-hidden="true"><span class="bar"></span></li>
+    <li data-s="6"><button data-go="6"><span class="dot"></span><span class="num">6</span></button></li>
+    <li aria-hidden="true"><span class="bar"></span></li><li><span class="flag" id="flag">🏆</span></li>
+  </ol>
+  <p class="mono" id="stageCount" style="font-size:.68rem;letter-spacing:.2em;color:var(--dim)">INÍCIO</p>
+</header>
+
+<main id="app">
+
+<!-- ============ 0 · INÍCIO ============ -->
+<section class="stage" id="st0" aria-label="Tela inicial">
+  <div class="intro-beam" aria-hidden="true"></div>
+  <div>
+    <p class="kicker" style="--kc:var(--c6)">experimento interativo de óptica</p>
+    <h1 id="introTitle" data-text="DISPERSÃO, DIFRAÇÃO E ENERGIA">DISPERSÃO, DIFRAÇÃO E ENERGIA</h1>
+    <p class="sub">Uma viagem interativa unificada pelo comportamento ondulatório da luz e suas aplicações práticas no mundo real.</p>
+    <button class="btn primary big" id="btnStart">[ COMEÇAR EXPERIÊNCIA → ]</button>
+    <p class="mini">6 EXPERIÊNCIAS · 1 PARA CADA INTEGRANTE DA EQUIPE</p>
+  </div>
+</section>
+
+<!-- ============ 1 · A LUZ ============ -->
+<section class="stage" id="st1" aria-labelledby="t1">
+  <p class="kicker" style="--kc:var(--c1)">Experiência 01 · A Natureza da Luz</p>
+  <h2 id="t1" tabindex="-1" data-text="DE ONDE VÊM AS CORES?">DE ONDE VÊM AS CORES?</h2>
+  <p class="sub">A luz branca é uma ilusão. Arraste o controle e descubra o espectro invisível que carrega energia.</p>
+
+  <div class="lab">
+    <span class="hint">ARRASTE O CONTROLE ↓</span>
+    <svg class="scene" viewBox="0 0 900 190" role="img" aria-label="Lanterna emitindo um feixe de luz cuja cor muda conforme o comprimento de onda escolhido">
+      <g aria-hidden="true">
+        <rect x="30" y="70" width="90" height="50" rx="10" fill="#1a2a4a" stroke="#3b537f"/>
+        <rect x="112" y="78" width="18" height="34" rx="4" fill="#2c4066" stroke="#3b537f"/>
+      </g>
+      <polygon id="beam1" class="rayline" points="130,86 880,40 880,150 130,104" fill="#ffffff" opacity=".85"/>
+    </svg>
+    <label class="mono" for="wlSlider" style="font-size:.72rem;letter-spacing:.2em">COMPRIMENTO DE ONDA ←────────→</label>
+    <input type="range" id="wlSlider" min="380" max="750" value="700" step="1" style="margin:.7rem 0">
+    <p class="mono" id="wlRead" aria-live="polite" style="font-size:.85rem">λ = 700 nm · 🔴 Vermelho</p>
+    <div class="chips" id="colorChips" role="group" aria-label="Cores do espectro visível"></div>
+    <div class="fb" id="colorCard" aria-live="polite">Clique em uma cor acima para ver seus detalhes. 👆</div>
+
+    <div class="qbox">
+      <p>❓ A luz branca é realmente uma única cor?</p>
+      <div class="row">
+        <button class="btn" id="q1sim">SIM</button>
+        <button class="btn" id="q1nao">NÃO, É UMA MISTURA</button>
+      </div>
+      <div class="fb" id="q1fb" aria-live="polite" style="display:none"></div>
+    </div>
+  </div>
+  <div class="stage-nav"><span></span><button class="btn primary" data-go="2">PRÓXIMA → DISPERSÃO</button></div>
+</section>
+
+<!-- ============ 2 · DISPERSÃO ============ -->
+<section class="stage" id="st2" aria-labelledby="t2">
+  <p class="kicker" style="--kc:var(--c2)">Experiência 02 · Dispersão</p>
+  <h2 id="t2" tabindex="-1" data-text="A CHAVE DO ESPECTRO">A CHAVE DO ESPECTRO</h2>
+  <p class="sub">A dispersão separa a luz. Arraste o prisma e ative o fenômeno para revelar o arco-íris escondido na luz branca.</p>
+
+  <div class="lab">
+    <span class="hint">⠿ ARRASTE O PRISMA</span>
+    <svg class="scene" id="prismSvg" viewBox="0 0 900 400" role="img" aria-label="Feixe de luz branca atravessando um prisma triangular que pode ser arrastado; com a dispersão ativada, a luz sai separada em arco-íris">
+      <g aria-hidden="true">
+        <rect x="26" y="180" width="86" height="46" rx="9" fill="#1a2a4a" stroke="#3b537f"/>
+        <rect x="104" y="188" width="16" height="30" rx="4" fill="#2c4066" stroke="#3b537f"/>
+      </g>
+      <line id="beamIn" class="rayline" x1="120" y1="203" x2="430" y2="203" stroke="#ffffff" stroke-width="5"/>
+      <g id="raysG" style="display:none"></g>
+      <line id="beamOut" class="rayline" x1="470" y1="203" x2="880" y2="215" stroke="#ffffff" stroke-width="5"/>
+      <g id="prismG" class="draggable" tabindex="0" role="button" aria-label="Prisma. Use as setas do teclado ou arraste para mover.">
+        <polygon id="prismPoly" points="430,150 480,240 380,240" fill="rgba(120,190,255,.22)" stroke="#9fd4ff" stroke-width="3" style="filter:drop-shadow(0 0 12px rgba(120,190,255,.6))"/>
+      </g>
+    </svg>
+    <div class="row" style="display:flex;gap:.8rem;flex-wrap:wrap;margin-top:.8rem">
+      <button class="btn primary" id="btnDispers" aria-pressed="false">[ ATIVAR DISPERSÃO ]</button>
+    </div>
+    <div class="fb" id="p2fb" aria-live="polite">Com a dispersão desligada, a luz branca apenas atravessa o prisma. Ative para ver o espectro! 👆</div>
+  </div>
+  <div class="stage-nav"><button class="btn" data-go="1">← VOLTAR</button><button class="btn primary" data-go="3">PRÓXIMA → DIFRAÇÃO</button></div>
+</section>
+
+<!-- ============ 3 · DIFRAÇÃO ============ -->
+<section class="stage" id="st3" aria-labelledby="t3">
+  <p class="kicker" style="--kc:var(--c3)">Experiência 03 · Difração</p>
+  <h2 id="t3" tabindex="-1" data-text="A LUZ CONTORNA OBSTÁCULOS">A LUZ CONTORNA OBSTÁCULOS</h2>
+  <p class="sub">Controle o tamanho da fenda. Observe como a natureza ondulatória da luz faz com que ela se espalhe ao encontrar um obstáculo pequeno.</p>
+
+  <div class="lab">
+    <span class="hint">FENDA ↕</span>
+    <canvas id="slitCanvas" height="300" aria-label="Simulação de ondas atravessando uma fenda: quanto menor a abertura, mais a luz se espalha" role="img"></canvas>
+    <label class="mono" for="slitSlider" style="font-size:.72rem;letter-spacing:.2em;display:block;margin-top:1rem">PEQUENA ─────────── GRANDE</label>
+    <input type="range" class="plain" id="slitSlider" min="8" max="150" value="60" style="margin-top:.6rem">
+    <p class="mono" id="slitRead" aria-live="polite" style="font-size:.85rem;margin-top:.6rem">Fenda média — espalhamento médio.</p>
+
+    <div class="qbox">
+      <p>❓ O que acontece quando diminuímos a abertura?</p>
+      <div class="row" id="slitQuiz">
+        <button class="btn" data-ok="0">A luz para ❌</button>
+        <button class="btn" data-ok="1">A luz se espalha mais (Difração)</button>
+        <button class="btn" data-ok="0">A luz fica mais rápida ❌</button>
+      </div>
+      <div class="fb" id="slitFb" aria-live="polite" style="display:none"></div>
+    </div>
+  </div>
+  <div class="stage-nav"><button class="btn" data-go="2">← VOLTAR</button><button class="btn primary" data-go="4">PRÓXIMA → O ENCONTRO (CD)</button></div>
+</section>
+
+<!-- ============ 4 · CD ============ -->
+<section class="stage" id="st4" aria-labelledby="t4">
+  <p class="kicker" style="--kc:var(--c4)">Experiência 04 · O Encontro dos Fenômenos</p>
+  <h2 id="t4" tabindex="-1" data-text="POR QUE O CD FICA COLORIDO?">POR QUE O CD FICA COLORIDO?</h2>
+  <p class="sub">Aqui, a difração e a dispersão trabalham juntas! Arraste a fonte de luz ☀️ e clique no CD para descobrir o segredo.</p>
+
+  <div class="lab">
+    <span class="hint">⠿ ARRASTE O ☀️</span>
+    <div id="cdArea">
+      <div id="cdRays" aria-hidden="true"></div>
+      <div id="cdDisc" role="button" tabindex="0" aria-label="CD virtual. Clique ou pressione Enter para descobrir de onde vêm as cores."></div>
+      <div id="cdLight" role="button" tabindex="0" aria-label="Fonte de luz. Arraste ou use as setas para mover.">☀️</div>
+    </div>
+    <p class="mono" id="cdRead" aria-live="polite" style="font-size:.85rem;margin-top:.9rem">Ângulo da luz: 0° — mova a fonte e veja o arco-íris girar.</p>
+    <button class="btn" id="btnCdWhy" style="margin-top:.8rem">🌈 DESVENDAR O SEGREDO</button>
+    <div class="fb" id="cdFb" aria-live="polite" style="display:none"></div>
+  </div>
+  <div class="stage-nav"><button class="btn" data-go="3">← VOLTAR</button><button class="btn primary" data-go="5">PRÓXIMA → QUIZ</button></div>
+</section>
+
+<!-- ============ 5 · QUIZ ============ -->
+<section class="stage" id="st5" aria-labelledby="t5">
+  <p class="kicker" style="--kc:var(--c5)">Experiência 05 · O Jogo</p>
+  <h2 id="t5" tabindex="-1" data-text="DISPERSÃO OU DIFRAÇÃO?">DISPERSÃO OU DIFRAÇÃO?</h2>
+  <p class="sub">Analise cada situação e escolha o conceito correto. Acerto de primeira vale +10 pontos!</p>
+  <div id="quizBox"></div>
+  <div class="stage-nav"><button class="btn" data-go="4">← VOLTAR</button><button class="btn primary" data-go="6">PRÓXIMA → APLICAÇÕES</button></div>
+</section>
+
+<!-- ============ 6 · APLICAÇÕES ============ -->
+<section class="stage" id="st6" aria-labelledby="t6">
+  <p class="kicker" style="--kc:var(--c6)">Experiência 06 · Aplicações no Mundo Real</p>
+  <h2 id="t6" tabindex="-1" data-text="ONDE ISSO EXISTE?">ONDE ISSO EXISTE?</h2>
+  <p class="sub">Toque em cada objeto para revelar a física por trás dele. Preste atenção especial na solução para a piscina!</p>
+  <div class="apps">
+    <button class="app-card" aria-expanded="false"><span class="tag">CLIQUE</span><span class="emo">🌈</span><h3>Arco-íris</h3><p>Luz do sol + gotas de água.</p><span class="more">A luz solar sofre <strong>dispersão</strong> ao atravessar gotas de água, separando-se em cores visíveis.</span></button>
+    
+    <button class="app-card pool-card" aria-expanded="false">
+      <span class="tag">SOLUÇÃO</span>
+      <span class="emo">🏊‍♂️</span>
+      <h3>Aquecimento da Piscina</h3>
+      <p>Como a dispersão resolve isso?</p>
+      <span class="more">
+        A <strong>dispersão</strong> nos ensina que a luz branca contém todo o espectro, incluindo o <strong>infravermelho</strong> (calor invisível). 
+        Sabendo disso, criamos coberturas escuras que <strong>absorvem</strong> todo esse espectro disperso, convertendo a energia luminosa em energia térmica para aquecer a água.
+        <div class="heat-anim">
+          <div class="heat-ray"></div><div class="heat-ray" style="animation-delay:.2s"></div><div class="heat-ray" style="animation-delay:.4s"></div>
+          <span style="font-size:.8rem;color:var(--c2);margin-left:.5rem">Luz → Absorção Total → Calor</span>
+        </div>
+      </span>
+    </button>
+
+    <button class="app-card" aria-expanded="false"><span class="tag">CLIQUE</span><span class="emo">💿</span><h3>CD / DVD</h3><p>Cores que dançam na superfície.</p><span class="more">As trilhas microscópicas produzem <strong>difração</strong>, que separa a luz (dispersão) em diferentes ângulos.</span></button>
+    
+    <button class="app-card" aria-expanded="false"><span class="tag">CLIQUE</span><span class="emo">🔬</span><h3>Espectroscopia</h3><p>A “impressão digital” da matéria.</p><span class="more">A separação da luz permite analisar diferentes materiais e estrelas a partir de seus espectros únicos.</span></button>
+  </div>
+  <div class="stage-nav"><button class="btn" data-go="5">← VOLTAR</button><button class="btn primary" data-go="7">DESAFIO FINAL 🏆</button></div>
+</section>
+
+<!-- ============ 7 · DESAFIO FINAL ============ -->
+<section class="stage" id="st7" aria-labelledby="t7">
+  <p class="kicker" style="--kc:var(--c3)">Desafio Final</p>
+  <h2 id="t7" tabindex="-1" data-text="VOCÊ ENTENDEU?">VOCÊ ENTENDEU?</h2>
+  <p class="sub">Monte as sequências na ordem correta, clicando nas peças certas para provar seu domínio.</p>
+
+  <div class="lab" id="seq1Box">
+    <span class="hint">SEQUÊNCIA 1: ÓPTICA</span>
+    <p style="font-weight:700">Como a luz branca se separa em cores?</p>
+    <div class="seq-slots" id="seq1Slots"></div>
+    <div class="pool" id="seq1Pool"></div>
+    <div class="fb" id="seq1Fb" aria-live="polite" style="display:none"></div>
+  </div>
+  
+  <div class="lab" id="seq2Box" style="display:none">
+    <span class="hint">SEQUÊNCIA 2: APLICAÇÃO PRÁTICA</span>
+    <p style="font-weight:700">Como o conhecimento da dispersão ajuda a aquecer uma piscina?</p>
+    <div class="seq-slots" id="seq2Slots"></div>
+    <div class="pool" id="seq2Pool"></div>
+  </div>
+
+  <div id="finalWin">
+    <h3 data-text="🎉 EXPERIÊNCIA CONCLUÍDA!">🎉 EXPERIÊNCIA CONCLUÍDA!</h3>
+    <p>Você dominou a dispersão e a difração — e ainda descobriu como usar o espectro da luz para aquecer a piscina! 🌈🏊‍♂️</p>
+    <div style="margin-top:2rem;display:flex;gap:.8rem;justify-content:center;flex-wrap:wrap">
+      <button class="btn primary" id="btnRestart">↺ RECOMEÇAR VIAGEM</button>
+      <button class="btn" data-go="1">REVER EXPERIÊNCIAS</button>
+    </div>
+  </div>
+  <div class="stage-nav"><button class="btn" data-go="6">← VOLTAR</button><span></span></div>
+</section>
+</main>
+
+<script>
+/* ================= UTILITÁRIOS ================= */
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const RM=matchMedia('(prefers-reduced-motion: reduce)');
+const motionOK=()=>!RM.matches;
+function wl2rgb(w){let r,g,b;
+  if(w<440){r=(440-w)/60;g=0;b=1}else if(w<490){r=0;g=(w-440)/50;b=1}
+  else if(w<510){r=0;g=1;b=(510-w)/20}else if(w<580){r=(w-510)/70;g=1;b=0}
+  else if(w<645){r=1;g=(645-w)/65;b=0}else{r=1;g=0;b=0}
+  return `rgb(${Math.round(r*255)},${Math.round(g*255)},${Math.round(b*255)})`;}
+function scramble(el){const fin=el.dataset.text||el.textContent;el.dataset.text=fin;
+  if(!motionOK()){el.textContent=fin;return}
+  const ch='☀◣◢#%/<>*+=0123456789';let f=0,tot=fin.length*3+22;
+  (function st(){f++;el.textContent=fin.split('').map((c,i)=>c===' '?' ':(i<(f-8)/2?c:ch[Math.random()*ch.length|0])).join('');
+   if(f<tot)requestAnimationFrame(st);else el.textContent=fin})();}
+
+/* ================= PARTÍCULAS + CONFETE ================= */
+const pc=$('#photons'),px=pc.getContext('2d');let P=[],burst=[];
+function sizePC(){pc.width=innerWidth;pc.height=innerHeight}
+sizePC();addEventListener('resize',sizePC);
+const SPEC=['#ff4d3d','#ff9f1c','#ffe14d','#3ddc84','#38a3ff','#b06bff','#ffffff'];
+for(let i=0;i<80;i++)P.push({x:Math.random()*innerWidth,y:Math.random()*innerHeight,r:Math.random()*1.8+.4,
+  vx:.08+Math.random()*.25,vy:-.05-Math.random()*.2,c:SPEC[Math.random()*7|0],tw:Math.random()*6.28});
+function drawP(t){px.clearRect(0,0,pc.width,pc.height);
+  for(const p of P){p.x+=p.vx;p.y+=p.vy;if(p.x>pc.width+4)p.x=-4;if(p.y<-4)p.y=pc.height+4;
+    px.globalAlpha=.35+.4*Math.abs(Math.sin(t/900+p.tw));px.fillStyle=p.c;
+    px.beginPath();px.arc(p.x,p.y,p.r,0,7);px.fill();}
+  burst=burst.filter(b=>b.life>0);
+  for(const b of burst){b.x+=b.vx;b.y+=b.vy;b.vy+=.12;b.life-=2;
+    px.globalAlpha=Math.max(0,b.life/100);px.fillStyle=b.c;px.fillRect(b.x,b.y,3,3);}
+  px.globalAlpha=1;}
+function confetti(){if(!motionOK())return;
+  for(let i=0;i<160;i++)burst.push({x:innerWidth/2,y:innerHeight/2.4,vx:(Math.random()-.5)*11,vy:(Math.random()-.9)*9,life:100,c:SPEC[i%7]});}
+(function loop(t){if(motionOK())drawP(t);requestAnimationFrame(loop)})(0);
+if(!motionOK())drawP(0);
+
+/* ================= NAVEGAÇÃO / PROGRESSO ================= */
+let cur=0,maxVisited=0;
+const NAMES=['INÍCIO','1·LUZ','2·DISPERSÃO','3·DIFRAÇÃO','4·CD','5·QUIZ','6·APLICAÇÕES','🏆 FINAL'];
+function goTo(n){
+  $$('.stage').forEach(s=>s.classList.remove('active'));
+  $('#st'+n).classList.add('active');cur=n;maxVisited=Math.max(maxVisited,n);
+  $$('#steps li[data-s]').forEach(li=>{const s=+li.dataset.s;
+    li.classList.toggle('done',s<n||(n===7));li.classList.toggle('now',s===n);
+    li.querySelector('button').disabled=s>maxVisited&&s!==n;});
+  $('#flag').classList.toggle('lit',n===7);
+  $('#stageCount').textContent=NAMES[n];
+  scrollTo({top:0,behavior:motionOK()?'smooth':'auto'});
+  const h=$('#st'+n+' h2')||$('#st0 h1');if(h){h.focus({preventScroll:true});scramble(h);}
+  if(n===5)startQuiz();
+  if(n===3)drawSlit(performance.now());
+}
+$$('[data-go]').forEach(b=>b.addEventListener('click',()=>goTo(+b.dataset.go)));
+$('#btnStart').addEventListener('click',()=>goTo(1));
+$('#btnRestart').addEventListener('click',()=>{location.hash='';resetFinal();goTo(0);});
+
+/* ================= 1 · A LUZ ================= */
+const CORES=[
+ {n:'Vermelho',e:'🔴',wl:680,l1:'Comprimento de onda maior',l2:'Frequência menor'},
+ {n:'Laranja',e:'🟠',wl:610,l1:'Comprimento de onda grande',l2:'Frequência baixa'},
+ {n:'Amarelo',e:'🟡',wl:580,l1:'Comprimento de onda médio-grande',l2:'Frequência média-baixa'},
+ {n:'Verde',e:'🟢',wl:530,l1:'Comprimento de onda médio',l2:'Frequência média'},
+ {n:'Azul',e:'🔵',wl:470,l1:'Comprimento de onda pequeno',l2:'Frequência alta'},
+ {n:'Violeta',e:'🟣',wl:410,l1:'Comprimento de onda menor',l2:'Frequência maior'}];
+function nearestColor(w){let best=CORES[0];for(const c of CORES)if(Math.abs(c.wl-w)<Math.abs(best.wl-w))best=c;return best}
+function setWL(w,fromChip){
+  const c=nearestColor(w),col=wl2rgb(w);
+  $('#beam1').setAttribute('fill',col);$('#beam1').style.filter=`drop-shadow(0 0 14px ${col})`;
+  $('#wlRead').textContent=`λ = ${w} nm · ${c.e} ${c.n}`;
+  if(!fromChip)$$('#colorChips button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.n===c.n));
+}
+CORES.forEach(c=>{
+  const b=document.createElement('button');
+  b.style.background=wl2rgb(c.wl);b.style.color=wl2rgb(c.wl);
+  b.setAttribute('aria-label',c.n);b.setAttribute('aria-pressed','false');b.dataset.n=c.n;
+  b.addEventListener('click',()=>{
+    $('#wlSlider').value=c.wl;setWL(c.wl,true);
+    $$('#colorChips button').forEach(x=>x.setAttribute('aria-pressed',x===b));
+    const f=Math.round(299792/c.wl);
+    $('#colorCard').className='fb ok';
+    $('#colorCard').innerHTML=`<strong>${c.e} ${c.n}</strong><br>${c.l1}<br>${c.l2}<br><span class="mono" style="font-size:.78rem;color:var(--dim)">λ ≈ ${c.wl} nm · f ≈ ${f} THz</span>`;
+  });
+  $('#colorChips').appendChild(b);
+});
+$('#wlSlider').addEventListener('input',e=>{setWL(+e.target.value);
+  $('#colorCard').className='fb';$('#colorCard').textContent=`${nearestColor(+e.target.value).e} ${nearestColor(+e.target.value).n} — clique na bolinha da cor para detalhes.`;});
+setWL(700);
+$('#q1nao').addEventListener('click',()=>{const f=$('#q1fb');f.style.display='block';f.className='fb ok';
+  f.textContent='✅ Exatamente! A luz branca é composta por diferentes comprimentos de onda. Entender isso é o primeiro passo para dominar a energia solar.';});
+$('#q1sim').addEventListener('click',()=>{const f=$('#q1fb');f.style.display='block';f.className='fb err';
+  f.textContent='❌ Quase! Parece uma cor só… mas abra o feixe com um prisma e você descobre a verdade na próxima experiência. →';});
+
+/* ================= 2 · DISPERSÃO ================= */
+const prism={x:430,y:200};let dispers=false;
+const raysG=$('#raysG'),SVG=$('#prismSvg');
+const RAYC=['#ff4d3d','#ff9f1c','#ffe14d','#3ddc84','#38a3ff','#b06bff'];
+const RAYN=['vermelho','laranja','amarelo','verde','azul','violeta'];
+RAYC.forEach((c,i)=>{
+  const l=document.createElementNS('http://www.w3.org/2000/svg','line');
+  l.setAttribute('class','rayline');l.setAttribute('stroke',c);l.setAttribute('stroke-width','5');
+  l.style.color=c;l.dataset.i=i;raysG.appendChild(l);
+  const h=document.createElementNS('http://www.w3.org/2000/svg','line');
+  h.setAttribute('class','hitline');h.dataset.i=i;
+  h.setAttribute('role','button');h.setAttribute('tabindex','0');
+  h.setAttribute('aria-label','Cor '+RAYN[i]+'. Clique para explicar a separação.');
+  h.addEventListener('click',()=>rayExplain(i));
+  h.addEventListener('keydown',e=>{if(e.key==='Enter')rayExplain(i)});
+  raysG.appendChild(h);
+});
+function rayExplain(i){
+  const extra=i>=4?'O violeta é o que MAIS se desvia.':i<=1?'O vermelho é o que MENOS se desvia.':'Cada cor desvia um pouco diferente.';
+  $('#p2fb').className='fb ok';
+  $('#p2fb').innerHTML=`<strong>Por que ela se separou?</strong> Cada comprimento de onda sofre um desvio diferente ao atravessar o material do prisma. Esse fenômeno é chamado de <strong>dispersão luminosa</strong>. ${extra}`;
+}
+function renderPrism(){
+  $('#prismPoly').setAttribute('points',`${prism.x},${prism.y-52} ${prism.x+50},${prism.y+38} ${prism.x-50},${prism.y+38}`);
+  $('#beamIn').setAttribute('x2',prism.x-8);$('#beamIn').setAttribute('y2',prism.y);
+  const ey=prism.y+6,tilt=(prism.y-200)*.5;
+  if(dispers){
+    $('#beamOut').style.display='none';
+    const lines=raysG.querySelectorAll('line');
+    for(let i=0;i<6;i++){
+      const yEnd=ey+tilt+(i-2.5)*52+(prism.x-430)*.06;
+      const x2=880,y2=Math.max(20,Math.min(380,yEnd));
+      lines[i*2].setAttribute('x1',prism.x+30);lines[i*2].setAttribute('y1',ey);
+      lines[i*2].setAttribute('x2',x2);lines[i*2].setAttribute('y2',y2);
+      lines[i*2+1].setAttribute('x1',prism.x+30);lines[i*2+1].setAttribute('y1',ey);
+      lines[i*2+1].setAttribute('x2',x2);lines[i*2+1].setAttribute('y2',y2);
+    }
+  }else{
+    raysG.style.display='none';$('#beamOut').style.display='';
+    $('#beamOut').setAttribute('x1',prism.x+30);$('#beamOut').setAttribute('y1',ey);
+    $('#beamOut').setAttribute('x2',880);$('#beamOut').setAttribute('y2',Math.max(20,Math.min(380,ey+tilt+12)));
+  }
+  if(dispers)raysG.style.display='';
+}
+$('#btnDispers').addEventListener('click',e=>{
+  dispers=!dispers;e.currentTarget.setAttribute('aria-pressed',dispers);
+  e.currentTarget.textContent=dispers?'[ DESATIVAR DISPERSÃO ]':'[ ATIVAR DISPERSÃO ]';
+  $('#p2fb').className='fb';
+  $('#p2fb').textContent=dispers?'Branco → Vermelho → Laranja → Amarelo → Verde → Azul → Violeta. Clique em uma cor! 🌈':'Com a dispersão desligada, a luz branca apenas atravessa o prisma.';
+  renderPrism();
+});
+let dragP=false;
+const svgPt=e=>{const p=SVG.createSVGPoint();p.x=e.clientX;p.y=e.clientY;return p.matrixTransform(SVG.getScreenCTM().inverse());};
+$('#prismG').addEventListener('pointerdown',e=>{dragP=true;$('#prismG').setPointerCapture(e.pointerId);});
+SVG.addEventListener('pointermove',e=>{if(!dragP)return;const p=svgPt(e);
+  prism.x=Math.max(250,Math.min(680,p.x));prism.y=Math.max(110,Math.min(300,p.y));renderPrism();});
+addEventListener('pointerup',()=>dragP=false);
+$('#prismG').addEventListener('keydown',e=>{
+  const d={ArrowLeft:[-12,0],ArrowRight:[12,0],ArrowUp:[0,-12],ArrowDown:[0,12]}[e.key];
+  if(d){e.preventDefault();prism.x=Math.max(250,Math.min(680,prism.x+d[0]));prism.y=Math.max(110,Math.min(300,prism.y+d[1]));renderPrism();}});
+renderPrism();
+
+/* ================= 3 · DIFRAÇÃO ================= */
+const sc=$('#slitCanvas'),sx=sc.getContext('2d');
+function sizeSC(){sc.width=sc.clientWidth*2;sc.height=300*2;}
+addEventListener('resize',()=>{sizeSC();drawSlit(performance.now())});
+function drawSlit(t){
+  sizeSC();const w=sc.width,h=sc.height,bx=w*.42,cy=h/2,slit=(+$('#slitSlider').value)/150;
+  const gap=20+slit*(h*.55);
+  sx.clearRect(0,0,w,h);
+  const speed=motionOK()?t*.12:t*.0+40;
+  sx.strokeStyle='rgba(150,220,255,.8)';sx.lineWidth=3;
+  for(let x=((speed)%70);x<bx-8;x+=70){sx.beginPath();sx.moveTo(x,20);sx.lineTo(x,h-20);sx.stroke();}
+  sx.fillStyle='#1a2a4a';sx.strokeStyle='#3b537f';
+  sx.fillRect(bx-8,0,16,cy-gap/2);sx.fillRect(bx-8,cy+gap/2,16,h-(cy+gap/2));
+  const spread=1.25-(slit)*1.05;
+  const R0=(speed*1.4)%90;
+  for(let r=R0+30;r<w*.62;r+=90){
+    sx.beginPath();sx.strokeStyle=`rgba(140,225,255,${Math.max(0,.85-r/(w*.7))})`;sx.lineWidth=3.5;
+    sx.arc(bx+6,cy,r,-spread,spread);sx.stroke();
+  }
+  sx.fillStyle='rgba(160,230,255,.9)';sx.font='26px Space Mono';
+  sx.fillText('FENDA',bx-34,cy-gap/2-14);
+}
+(function slitLoop(t){if(cur===3&&motionOK())drawSlit(t);requestAnimationFrame(slitLoop)})(0);
+$('#slitSlider').addEventListener('input',e=>{
+  const v=+e.target.value;
+  $('#slitRead').textContent=v<50?'Fenda PEQUENA — a luz se espalha MUITO! 🌊':v<100?'Fenda média — espalhamento médio.':'Fenda GRANDE — a luz quase não se espalha. ➡️';
+  if(!motionOK())drawSlit(performance.now());
+});
+$$('#slitQuiz button').forEach(b=>b.addEventListener('click',()=>{
+  const f=$('#slitFb');f.style.display='block';
+  if(b.dataset.ok==='1'){f.className='fb ok';
+    f.textContent='✅ Isso! Quanto menor a abertura em relação ao comprimento de onda, mais a luz se espalha. Esse espalhamento é a DIFRAÇÃO.';}
+  else{f.className='fb err';f.textContent='❌ Tente novamente! Dica: olhe o que acontece com as ondas quando a fenda fica pequenininha.';}
+}));
+
+/* ================= 4 · CD ================= */
+const cdArea=$('#cdArea'),cdL=$('#cdLight');let lx=0,ly=0,cdDrag=false;
+function cdPos(x,y){
+  const r=cdArea.getBoundingClientRect();
+  lx=Math.max(10,Math.min(r.width-40,x));ly=Math.max(8,Math.min(r.height-44,y));
+  cdL.style.left=lx+'px';cdL.style.top=ly+'px';
+  const cx=r.width/2,cy=r.height*.52;
+  const ang=Math.round(Math.atan2(ly+16-cy,lx+16-cx)*180/Math.PI);
+  $('#cdDisc').style.setProperty('--sheen',ang+'deg');
+  $('#cdRays').style.transform=`rotate(${ang+180}deg)`;
+  $('#cdRays').style.filter=`blur(1.5px) hue-rotate(${ang}deg) drop-shadow(0 0 10px #fff)`;
+  $('#cdRead').textContent=`Ângulo da luz: ${ang}° — as cores que você vê mudam com a posição! 💿`;
+}
+cdL.addEventListener('pointerdown',e=>{cdDrag=true;cdL.setPointerCapture(e.pointerId);e.preventDefault();});
+cdArea.addEventListener('pointermove',e=>{if(!cdDrag)return;const r=cdArea.getBoundingClientRect();cdPos(e.clientX-r.left-16,e.clientY-r.top-16);});
+addEventListener('pointerup',()=>cdDrag=false);
+cdL.addEventListener('keydown',e=>{
+  const d={ArrowLeft:[-14,0],ArrowRight:[14,0],ArrowUp:[0,-14],ArrowDown:[0,14]}[e.key];
+  if(d){e.preventDefault();cdPos(lx+d[0],ly+d[1]);}});
+function cdWhy(){const f=$('#cdFb');f.style.display='block';f.className='fb ok';
+  f.innerHTML='<strong>🌈 O encontro dos fenômenos!</strong> As pequenas trilhas do CD causam <strong>difração</strong> (espalhamento da onda). Como cada cor da luz branca tem um comprimento de onda diferente, elas são difratadas em ângulos ligeiramente diferentes, causando a <strong>dispersão</strong> das cores que você vê!';}
+$('#cdDisc').addEventListener('click',cdWhy);
+$('#cdDisc').addEventListener('keydown',e=>{if(e.key==='Enter')cdWhy()});
+$('#btnCdWhy').addEventListener('click',cdWhy);
+setTimeout(()=>{const r=cdArea.getBoundingClientRect();cdPos(r.width*.12,r.height*.18)},100);
+
+/* ================= 5 · QUIZ ================= */
+const QUIZ=[
+ {e:'🔺',t:'Um prisma separa a luz branca em um arco-íris.',a:'disp'},
+ {e:'💿',t:'Cores aparecem ao refletir luz em um CD.',a:'difr'},
+ {e:'🌊',t:'Uma onda passa por uma abertura pequena e se espalha.',a:'difr'},
+ {e:'🏊‍♂️',t:'Usamos o conhecimento do espectro (revelado pela dispersão) para criar materiais escuros que absorvem toda a luz e aquecem a água da piscina.',a:'disp'},
+ {e:'🔬',t:'Uma rede com milhares de ranhuras espalha a luz formando espectros.',a:'difr'}];
+let qi=0,score=0,acertos=0,wrongs=0;
+function startQuiz(){qi=0;score=0;acertos=0;renderQ();}
+function renderQ(){
+  const box=$('#quizBox');
+  if(qi>=QUIZ.length){
+    const msg=acertos===5?'🌟 MESTRE DA LUZ!':acertos>=3?'👏 Mandou muito bem!':'💡 Reviva as experiências e tente de novo!';
+    box.innerHTML=`<div class="quizcard"><span class="emo">🏆</span>
+      <p style="font-family:var(--f-disp);font-size:1.3rem">Você acertou ${acertos}/${QUIZ.length}!</p>
+      <p class="score" style="margin-top:.6rem">PONTUAÇÃO: ${score} PONTOS</p>
+      <p style="margin-top:.8rem;color:var(--dim)">${msg}</p></div>`;return;}
+  const q=QUIZ[qi];wrongs=0;
+  box.innerHTML=`<div class="quizcard"><span class="score">SITUAÇÃO ${qi+1}/${QUIZ.length} · ${score} PTS</span>
+    <span class="emo">${q.e}</span><p style="font-weight:700">${q.t}</p>
+    <p style="color:var(--dim);font-size:.9rem;margin-top:.3rem">Isso está mais relacionado a qual conceito?</p>
+    <div class="ansrow"><button class="b-disp" data-a="disp">🟦 DISPERSÃO / ESPECTRO</button>
+    <button class="b-difr" data-a="difr">🟥 DIFRAÇÃO</button></div>
+    <div class="fb" id="qzFb" aria-live="polite" style="display:none"></div></div>`;
+  box.querySelectorAll('[data-a]').forEach(b=>b.addEventListener('click',()=>{
+    const f=$('#qzFb');f.style.display='block';
+    if(b.dataset.a===q.a){if(wrongs===0){score+=10;acertos++;}
+      f.className='fb ok';f.textContent='✅ CORRETO! +10 pontos';
+      box.querySelectorAll('[data-a]').forEach(x=>x.disabled=true);
+      setTimeout(()=>{qi++;renderQ()},1000);}
+    else{wrongs++;f.className='fb err';f.textContent='❌ Tente novamente!';}
+  }));
+}
+
+/* ================= 6 · APLICAÇÕES ================= */
+$$('.app-card').forEach(c=>c.addEventListener('click',()=>{
+  const open=c.classList.toggle('open');c.setAttribute('aria-expanded',open);
+}));
+
+/* ================= 7 · DESAFIO FINAL ================= */
+function buildSeq(slotEl,poolEl,items,onDone){
+  slotEl.innerHTML='';poolEl.innerHTML='';
+  items.forEach(()=>{const s=document.createElement('div');s.className='slot';s.textContent='· · ·';slotEl.appendChild(s);});
+  let pool=[...items];do{pool.sort(()=>Math.random()-.5)}while(pool.join()===items.join());
+  let prog=0;
+  pool.forEach(txt=>{
+    const b=document.createElement('button');b.textContent=txt;
+    b.addEventListener('click',()=>{
+      if(txt===items[prog]){
+        b.classList.add('used');
+        const s=slotEl.children[prog];s.textContent=txt;s.classList.add('filled');
+        if(prog<items.length-1){const a=document.createElement('span');a.className='arrow';a.textContent='→';slotEl.insertBefore(a,slotEl.children[prog].nextSibling);}
+        prog++;
+        if(prog===items.length)onDone();
+      }else{b.classList.add('err');setTimeout(()=>b.classList.remove('err'),450);}
+    });
+    poolEl.appendChild(b);
+  });
+}
+function resetFinal(){$('#finalWin').classList.remove('show');$('#seq2Box').style.display='none';initSeq();}
+function initSeq(){
+  buildSeq($('#seq1Slots'),$('#seq1Pool'),['LUZ BRANCA','PRISMA','DISPERSÃO','ESPECTRO'],()=>{
+    $('#seq1Fb').style.display='block';$('#seq1Fb').className='fb ok';
+    $('#seq1Fb').textContent='✅ Perfeito! A dispersão separa a luz branca no prisma, revelando o espectro.';
+    $('#seq2Box').style.display='block';
+    setTimeout(() => $('#seq2Box').scrollIntoView({behavior: 'smooth', block: 'center'}), 300);
+  });
+  buildSeq($('#seq2Slots'),$('#seq2Pool'),['CONHECER O ESPECTRO','ABSORVER TODAS AS CORES','GERAR CALOR','AQUECER A PISCINA'],()=>{
+    $('#finalWin').classList.add('show');confetti();scramble($('#finalWin h3'));
+    setTimeout(() => $('#finalWin').scrollIntoView({behavior: 'smooth', block: 'center'}), 300);
+  });
+}
+initSeq();
+
+/* ================= BOOT ================= */
+goTo(0);scramble($('#introTitle'));
+</script>
+</body>
+</html>
